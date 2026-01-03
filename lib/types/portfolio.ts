@@ -11,7 +11,7 @@ export interface PortfolioStock {
   gainLoss: number;
   peRatio: number | null;
   latestEarnings: string | null;
-  sector: string | null;
+  sector: string;
 }
 
 export interface SectorSummary {
