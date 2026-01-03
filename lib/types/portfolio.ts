@@ -18,6 +18,6 @@ export interface SectorSummary {
   sector: string;
   totalInvestment: number;
   totalPresentValue: number;
-  gainValue: number;
+  gainLoss: number;
   stocks: PortfolioStock[];
 }

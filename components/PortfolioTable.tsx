@@ -173,12 +173,31 @@ const PortfolioTable = ({ data }: PortfolioTableProps) => {
                         header.getContext()
                       )}
                     </span>
+                    {header.column.getIsSorted() && (
+                      <span className="text-blue-600">
+                        {header.column.getIsSorted() === "asc" ? "↑" : "↓"}
+                      </span>
+                    )}
                   </div>
                 </th>
               ))}
             </tr>
           ))}
         </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {table.getRowModel().rows.map((row) => (
+            <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+              {row.getVisibleCells().map((cell) => (
+                <td
+                  key={cell.id}
+                  className="px-6 py-4 whitespace-nowrap text-sm"
+                >
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
       </table>
     </div>
   );
