@@ -78,5 +78,13 @@ export async function GET(request: NextRequest) {
     if (cacheData) {
       return NextResponse.json({ data: cacheData, cached: true });
     }
-  } catch (error) {}
+    const data = await fetchCompleteStockData(symbol, exchange);
+    cache.set(cacheKey, data);
+  } catch (error) {
+    console.error("Error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch stock" },
+      { status: 500 }
+    );
+  }
 }

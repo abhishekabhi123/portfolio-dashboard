@@ -1,0 +1,42 @@
+export const initialPortfolio = [
+  {
+    particulars: "Reliance Industries",
+    symbol: "RELIANCE",
+    purchasePrice: 2450,
+    quantity: 10,
+    exchange: "NSE" as const,
+    sector: "Energy",
+  },
+  {
+    particulars: "Tata Consultancy Services",
+    symbol: "TCS",
+    purchasePrice: 3600,
+    quantity: 5,
+    exchange: "NSE" as const,
+    sector: "Technology",
+  },
+  {
+    particulars: "HDFC Bank",
+    symbol: "HDFCBANK",
+    purchasePrice: 1650,
+    quantity: 15,
+    exchange: "NSE" as const,
+    sector: "Financials",
+  },
+  {
+    particulars: "Infosys",
+    symbol: "INFY",
+    purchasePrice: 1450,
+    quantity: 20,
+    exchange: "NSE" as const,
+    sector: "Technology",
+  },
+  {
+    particulars: "ICICI Bank",
+    symbol: "ICICIBANK",
+    purchasePrice: 950,
+    quantity: 25,
+    exchange: "NSE" as const,
+    sector: "Financials",
+  },
+];
