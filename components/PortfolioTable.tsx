@@ -35,15 +35,23 @@ const PortfolioTable = ({ data }: PortfolioTableProps) => {
       {
         accessorKey: "purchasePrice",
         header: "purchasePrice",
-        cell: (info) => `₹${(info.getValue() as number).toFixed(2)}`,
+        cell: (info) => (
+          <span className="text-gray-900 font-semibold">
+            ₹{(info.getValue() as number).toFixed(2)}
+          </span>
+        ),
       },
       {
         accessorKey: "quantity",
         header: "Qty",
-        cell: (info) =>
-          (info.getValue() as number).toLocaleString("en-IN", {
-            maximumFractionDigits: 2,
-          }),
+        cell: (info) => (
+          <span className="text-gray-900 font-semibold">
+            ₹
+            {(info.getValue() as number).toLocaleString("en-IN", {
+              maximumFractionDigits: 2,
+            })}
+          </span>
+        ),
       },
       {
         accessorKey: "portfolioPercent",
@@ -58,7 +66,7 @@ const PortfolioTable = ({ data }: PortfolioTableProps) => {
                   style={{ width: `${value}%` }}
                 />
               </div>
-              <span className="text-sm">{value.toFixed(2)}%</span>
+              <span className="text-sm text-black">{value.toFixed(2)}%</span>
             </div>
           );
         },
@@ -78,7 +86,7 @@ const PortfolioTable = ({ data }: PortfolioTableProps) => {
         cell: (info) => {
           const value = info.getValue() as number;
           return value ? (
-            <span className="font-semibold">{value.toFixed(2)}</span>
+            <span className="font-semibold text-black">{value.toFixed(2)}</span>
           ) : (
             <span className="text-gray-400">Loading ....</span>
           );
@@ -87,12 +95,14 @@ const PortfolioTable = ({ data }: PortfolioTableProps) => {
       {
         accessorKey: "presentValue",
         header: "Present Value",
-        cell: (info) => {
-          const value = info.getValue() as number;
-          return `₹${value.toLocaleString("en-IN", {
-            maximumFractionDigits: 2,
-          })}`;
-        },
+        cell: (info) => (
+          <span className="text-gray-900 font-semibold">
+            ₹
+            {(info.getValue() as number).toLocaleString("en-IN", {
+              maximumFractionDigits: 2,
+            })}
+          </span>
+        ),
       },
       {
         accessorKey: "gainLoss",
@@ -127,9 +137,11 @@ const PortfolioTable = ({ data }: PortfolioTableProps) => {
         cell: (info) => {
           const value = info.getValue() as number | null;
           return value !== null ? (
-            <span>{value.toFixed(2)}</span>
+            <span className="text-gray-900 font-semibold">
+              {value.toFixed(2)}
+            </span>
           ) : (
-            <span className="text-gray-400">N/A</span>
+            <span className="text-gray-500 italic">N/A</span>
           );
         },
       },
@@ -138,7 +150,11 @@ const PortfolioTable = ({ data }: PortfolioTableProps) => {
         header: "Latest Earnings",
         cell: (info) => {
           const value = info.getValue() as string | null;
-          return value || <span className="text-gray-400">N/A</span>;
+          return value ? (
+            <span className="text-gray-900 font-semibold">{value}</span>
+          ) : (
+            <span className="text-gray-500 italic">N/A</span>
+          );
         },
       },
     ],

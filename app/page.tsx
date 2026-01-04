@@ -5,16 +5,8 @@ import PortfolioSummary from "@/components/PortfolioSummary";
 import SectorGroup from "@/components/SectorGroup";
 import { PortfolioStock, SectorSummary } from "@/lib/types/portfolio";
 import { initialPortfolio } from "@/lib/data/samplePortfolio";
+import { groupBySector, calculateTotals } from "@/lib/utils/calculation";
 
-import {
-  calculateInvestment,
-  calculatePresentValue,
-  calculateGainLoss,
-  calculatePortfolioPercent,
-  groupBySector,
-  calculateTotals,
-} from "@/lib/utils/calculation";
-import { init } from "next/dist/compiled/webpack/webpack";
 export default function DashboardPage() {
   const [portfolioData, setPortfolioData] = useState<PortfolioStock[]>([]);
   const [sectorGroups, setSectorGroups] = useState<SectorSummary[]>([]);
@@ -22,10 +14,12 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [nextUpdate, setNextUpdate] = useState(15);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const fetchStockData = useCallback(async () => {
     try {
       setError(null);
+
       const stocks = initialPortfolio.map((stock) => ({
         symbol: stock.symbol,
         exchange: stock.exchange,
@@ -40,83 +34,90 @@ export default function DashboardPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch stock data");
+        throw new Error(`API error: ${response.status}`);
       }
 
       const result = await response.json();
-      const stockData = result.data;
+
+      const stocksData = result.data;
+
+      if (!stocksData) {
+        throw new Error("No data in response");
+      }
 
       const totalInvestment = initialPortfolio.reduce(
-        (sum, stock) =>
-          sum + calculateInvestment(stock.purchasePrice, stock.quantity),
+        (sum, stock) => sum + stock.purchasePrice * stock.quantity,
         0
       );
 
       const enrichedPortfolio: PortfolioStock[] = initialPortfolio.map(
         (stock, index) => {
-          const apiData = stockData[index];
-          const investment = calculateInvestment(
-            stock.purchasePrice,
-            stock.quantity
-          );
-          const cmp = apiData?.cmp || stock.purchasePrice;
-          const presentValue = calculatePresentValue(cmp, stock.quantity);
-          const gainLoss = calculateGainLoss(presentValue, investment);
-          const portfolioPercent = calculatePortfolioPercent(
-            investment,
-            totalInvestment
-          );
+          const apiData = stocksData[index] || {};
+          const investment = stock.purchasePrice * stock.quantity;
+          const cmp = apiData.cmp || stock.purchasePrice;
+          const presentValue = cmp * stock.quantity;
+          const gainLoss = presentValue - investment;
+          const portfolioPercent = (investment / totalInvestment) * 100;
 
           return {
-            ...stock,
+            particulars: stock.particulars,
+            symbol: stock.symbol,
+            purchasePrice: stock.purchasePrice,
+            quantity: stock.quantity,
             investment,
+            portfolioPercent,
+            exchange: stock.exchange,
             cmp,
             presentValue,
             gainLoss,
-            portfolioPercent,
-            peRatio: apiData?.peRatio || null,
-            latestEarnings: apiData?.eps ? `₹${apiData.eps.toFixed(2)}` : null,
+            peRatio: apiData.peRatio || null,
+            latestEarnings: apiData.eps ? `₹${apiData.eps.toFixed(2)}` : null,
+            sector: stock.sector,
           };
         }
       );
+
       setPortfolioData(enrichedPortfolio);
-
-      const grouped = groupBySector(enrichedPortfolio);
-      setSectorGroups(grouped);
-
+      setSectorGroups(groupBySector(enrichedPortfolio));
       setLastUpdated(new Date());
       setIsLoading(false);
-    } catch (error) {
-      console.error("Error fetching stock data:", error);
-      setError(error instanceof Error ? error.message : "An error occurred");
+
+      console.log("Data loaded successfully");
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError(err instanceof Error ? err.message : "Failed to load data");
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => {
+  const handleManualRefresh = () => {
+    setNextUpdate(15);
+    setRefreshKey((prev) => prev + 1);
     fetchStockData();
-  }, [fetchStockData]);
+  };
 
   useEffect(() => {
+    fetchStockData();
     const interval = setInterval(() => {
       fetchStockData();
       setNextUpdate(15);
     }, 15000);
 
     return () => clearInterval(interval);
-  }, [fetchStockData]);
+  }, [fetchStockData, refreshKey]);
 
   useEffect(() => {
     const countdown = setInterval(() => {
       setNextUpdate((prev) => (prev > 0 ? prev - 1 : 15));
     }, 1000);
+
     return () => clearInterval(countdown);
   }, []);
 
   const totals =
     portfolioData.length > 0 ? calculateTotals(portfolioData) : null;
 
-  if (!isLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -124,6 +125,29 @@ export default function DashboardPage() {
           <p className="mt-4 text-gray-600 font-medium">
             Loading portfolio data...
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-xl font-bold text-red-600 mb-4">
+            Error Loading Data
+          </h2>
+          <p className="text-gray-700 mb-4">{error}</p>
+          <button
+            onClick={() => {
+              setIsLoading(true);
+              setError(null);
+              fetchStockData();
+            }}
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -139,7 +163,7 @@ export default function DashboardPage() {
                 Portfolio Dashboard
               </h1>
               <p className="text-sm text-gray-600 mt-1">
-                Real time stock portfolio tracking
+                Real-time stock portfolio tracking
               </p>
             </div>
 
@@ -151,7 +175,7 @@ export default function DashboardPage() {
                 </span>
               </div>
               <button
-                onClick={fetchStockData}
+                onClick={handleManualRefresh}
                 className="mt-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Refresh Now
@@ -160,26 +184,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </header>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-center">
-              <svg
-                className="w-5 h-5 text-red-600 mr-2"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span className="text-red-800 font-medium">{error}</span>
-            </div>
-          </div>
-        )}
 
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {totals && (
           <PortfolioSummary
             totalInvestment={totals.totalInvestment}
@@ -207,9 +213,7 @@ export default function DashboardPage() {
 
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>Data updates automatically every 15 seconds</p>
-          <p className="mt-1">
-            Powered by Alpha Vantage API | Indian Stock Markets (NSE/BSE)
-          </p>
+          <p className="mt-1">Yahoo Finance API | Indian Markets (NSE/BSE)</p>
         </div>
       </main>
     </div>
