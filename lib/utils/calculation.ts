@@ -7,7 +7,7 @@ export function calculateInvestment(
   return purchasePrice * quantity;
 }
 
-export function calculatePercentValue(cmp: number, quantity: number): number {
+export function calculatePresentValue(cmp: number, quantity: number): number {
   return cmp * quantity;
 }
 
